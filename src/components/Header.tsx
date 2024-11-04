@@ -22,6 +22,11 @@ export default function Header() {
                 Sign Up
               </Link>
             </li>
+            <li>
+              <Link href="/login" className="text-gray-600 hover:text-blue-500">
+                Log In
+              </Link>
+            </li>
           </ul>
         </nav>
       </div>
