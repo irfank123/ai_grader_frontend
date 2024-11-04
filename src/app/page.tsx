@@ -1,4 +1,4 @@
-import Header from '@/components/Header'
+import LandingPageHeader from '@/components/LandingPageHeader'
 import Hero from '@/components/Hero'
 import Features from '@/components/Features'
 import HowItWorks from '@/components/HowItWorks'
@@ -8,7 +8,7 @@ import Footer from '@/components/Footer'
 export default function LandingPage() {
   return (
     <main className="min-h-screen bg-gray-100">
-      <Header />
+      <LandingPageHeader />
       <Hero />
       <Features />
       <HowItWorks />

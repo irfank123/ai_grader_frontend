@@ -12,10 +12,10 @@ export default function Login() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    // Here you would typically handle the login logic
+    
     console.log('Login attempt with:', email, password)
-    // For now, we'll just redirect to a placeholder dashboard
-    router.push('/dashboard')
+    
+    router.push('/practice')
   }
 
   return (

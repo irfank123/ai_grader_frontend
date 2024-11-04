@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 
-export default function Header() {
+export default function LandingPageHeader() {
   return (
     <header className="bg-white shadow-md">
       <div className="container mx-auto px-4 py-6 flex justify-between items-center">

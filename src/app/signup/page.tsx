@@ -13,10 +13,10 @@ export default function SignUp() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    // Here you would typically handle the signup logic
+    
     console.log('Sign up with:', email, password)
-    // For now, we'll just redirect to a placeholder dashboard
-    router.push('/dashboard')
+    
+    router.push('/practice')
   }
 
   return (
