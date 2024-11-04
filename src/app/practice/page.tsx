@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import PracticePageHeader from '@/components/PracticePageHeader'
 import ModeToggle from '@/components/ModeToggle'
 import Question from '@/components/Question'
@@ -11,14 +12,14 @@ import SubmitButton from '@/components/ui/submit-button'
 export default function PracticePage() {
   // State to manage the current mode (practice or exam)
   const [mode, setMode] = useState<'practice' | 'exam'>('practice')
-
+  const router = useRouter()
   // Precalculus question in LaTeX format
   const question = "\\text{Find the domain of } f(x) = \\frac{x+2}{x^2-4}"
 
   // Function to handle answer submission
   const handleSubmit = () => {
-    // TODO: Implement submission logic
-    console.log('Answer submitted')
+    // For now, we'll just navigate to the feedback page
+    router.push('/feedback')
   }
 
   return (
