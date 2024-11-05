@@ -1,7 +1,8 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Papa from 'papaparse'
 import PracticePageHeader from '@/components/PracticePageHeader'
 import ModeToggle from '@/components/ModeToggle'
 import Question from '@/components/Question'
@@ -10,61 +11,73 @@ import Footer from '@/components/Footer'
 import SubmitButton from '@/components/ui/submit-button'
 import QuestionNavigation from '@/components/QuestionNavigation'
 
-export default function PracticePage() {
-  // State to manage the current mode (practice or exam)
-  const [mode, setMode] = useState<'practice' | 'exam'>('practice')
-  const router = useRouter()
-  
-  // Precalculus question in LaTeX format
-  const question = "\\text{Find the domain of } f(x) = \\frac{x+2}{x^2-4}"
+interface QuestionData {
+  index: number
+  question: string
+  answer: string
+  solution: string
+  ai_solution: string
+  written_feedback: string
+  spoken_feedback: string
+}
 
-  // Function to handle answer submission
+export default function PracticePage() {
+  const [mode, setMode] = useState<'practice' | 'exam'>('practice')
+  const [questions, setQuestions] = useState<QuestionData[]>([])
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
+  const router = useRouter()
+
+  useEffect(() => {
+    const loadQuestions = async () => {
+      const response = await fetch('/mock_data.csv')
+      const csvData = await response.text()
+      const parsedData = Papa.parse<QuestionData>(csvData, { header: true })
+      setQuestions(parsedData.data)
+    }
+    loadQuestions()
+  }, [])
+
   const handleSubmit = () => {
-    // For now, we'll just navigate to the feedback page
-    router.push('/feedback')
+    router.push(`/feedback?questionIndex=${currentQuestionIndex}`)
   }
 
-  // Placeholder functions for question navigation
   const handleNextQuestion = () => {
-    console.log("Next question")
-    // This will be implemented later with database integration
+    setCurrentQuestionIndex((prevIndex) => 
+      prevIndex + 1 < questions.length ? prevIndex + 1 : 0
+    )
   }
 
   const handlePreviousQuestion = () => {
-    console.log("Previous question")
-    // This will be implemented later with database integration
+    setCurrentQuestionIndex((prevIndex) => 
+      prevIndex - 1 >= 0 ? prevIndex - 1 : questions.length - 1
+    )
   }
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
       <div className="flex-grow p-8">
         <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-lg overflow-hidden">
-          {/* Header component for the practice page */}
           <PracticePageHeader />
           
           <div className="p-6">
-            {/* Toggle component to switch between practice and exam modes */}
             <ModeToggle mode={mode} setMode={setMode} />
             
-            {/* Component to display the current question */}
-            <Question question={question} />
+            {questions.length > 0 && (
+              <Question question={questions[currentQuestionIndex].question} />
+            )}
             
-            {/* New component for question navigation */}
             <QuestionNavigation
               onPreviousQuestion={handlePreviousQuestion}
               onNextQuestion={handleNextQuestion}
             />
             
-            {/* Canvas component for user to write their solution */}
             <Canvas />
             
-            {/* Button component to submit the answer */}
             <SubmitButton onClick={handleSubmit} />
           </div>
         </div>
       </div>
       
-      {/* Footer component */}
       <Footer />
     </div>
   )
