@@ -8,11 +8,13 @@ import Question from '@/components/Question'
 import Canvas from '@/components/Canvas'
 import Footer from '@/components/Footer'
 import SubmitButton from '@/components/ui/submit-button'
+import QuestionNavigation from '@/components/QuestionNavigation'
 
 export default function PracticePage() {
   // State to manage the current mode (practice or exam)
   const [mode, setMode] = useState<'practice' | 'exam'>('practice')
   const router = useRouter()
+  
   // Precalculus question in LaTeX format
   const question = "\\text{Find the domain of } f(x) = \\frac{x+2}{x^2-4}"
 
@@ -20,6 +22,17 @@ export default function PracticePage() {
   const handleSubmit = () => {
     // For now, we'll just navigate to the feedback page
     router.push('/feedback')
+  }
+
+  // Placeholder functions for question navigation
+  const handleNextQuestion = () => {
+    console.log("Next question")
+    // This will be implemented later with database integration
+  }
+
+  const handlePreviousQuestion = () => {
+    console.log("Previous question")
+    // This will be implemented later with database integration
   }
 
   return (
@@ -35,6 +48,12 @@ export default function PracticePage() {
             
             {/* Component to display the current question */}
             <Question question={question} />
+            
+            {/* New component for question navigation */}
+            <QuestionNavigation
+              onPreviousQuestion={handlePreviousQuestion}
+              onNextQuestion={handleNextQuestion}
+            />
             
             {/* Canvas component for user to write their solution */}
             <Canvas />
