@@ -1,6 +1,4 @@
 import React from 'react'
-import { Button } from "@/components/ui/button"
-import { useRouter } from 'next/navigation'
 
 interface FeedbackContentProps {
   grade: string
@@ -9,8 +7,6 @@ interface FeedbackContentProps {
 }
 
 const FeedbackContent: React.FC<FeedbackContentProps> = ({ grade, writtenFeedback, spokenFeedback }) => {
-  const router = useRouter()
-
   return (
     <div className="space-y-6">
       <div className="bg-blue-100 p-4 rounded-lg">
@@ -27,13 +23,6 @@ const FeedbackContent: React.FC<FeedbackContentProps> = ({ grade, writtenFeedbac
         <h3 className="text-xl font-semibold mb-2">Spoken Explanation Feedback</h3>
         <p className="text-gray-700">{spokenFeedback}</p>
       </div>
-
-      <Button 
-        onClick={() => router.push('/practice')} 
-        className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-      >
-        Try Another Question
-      </Button>
     </div>
   )
 }

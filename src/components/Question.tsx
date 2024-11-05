@@ -1,5 +1,5 @@
 import React from 'react'
-import katex from 'katex'
+import Latex from 'react-latex-next'
 import 'katex/dist/katex.min.css'
 
 interface QuestionProps {
@@ -7,29 +7,12 @@ interface QuestionProps {
 }
 
 const Question: React.FC<QuestionProps> = ({ question }) => {
-  // Clean up the LaTeX string by ensuring proper spacing and math mode
-  const cleanedQuestion = question
-    .replace(/\\/g, '\\')  // Ensure backslashes are preserved
-    .replace(/\s+/g, ' ')  // Normalize spaces
-    .trim()
-
-  const renderedQuestion = katex.renderToString(cleanedQuestion, {
-    throwOnError: false,
-    displayMode: true,
-    strict: false,
-    trust: true,
-    macros: {
-      "\\f": "f(x)"  // Add common macros if needed
-    }
-  })
-
   return (
     <div className="mb-6">
-      <h2 className="text-2xl font-bold mb-2">Question:</h2>
-      <div 
-        dangerouslySetInnerHTML={{ __html: renderedQuestion }} 
-        className="katex-display"
-      />
+      <h2 className="text-2xl font-bold mb-4 text-left">Question:</h2>
+      <div className="text-center text-xl">
+        <Latex>{question}</Latex>
+      </div>
     </div>
   )
 }

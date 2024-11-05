@@ -1,8 +1,7 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import Papa from 'papaparse'
 import PracticePageHeader from '@/components/PracticePageHeader'
 import ModeToggle from '@/components/ModeToggle'
 import Question from '@/components/Question'
@@ -11,46 +10,25 @@ import Footer from '@/components/Footer'
 import SubmitButton from '@/components/ui/submit-button'
 import QuestionNavigation from '@/components/QuestionNavigation'
 
-interface QuestionData {
-  index: number
-  question: string
-  answer: string
-  solution: string
-  ai_solution: string
-  written_feedback: string
-  spoken_feedback: string
-}
-
 export default function PracticePage() {
   const [mode, setMode] = useState<'practice' | 'exam'>('practice')
-  const [questions, setQuestions] = useState<QuestionData[]>([])
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const router = useRouter()
-
-  useEffect(() => {
-    const loadQuestions = async () => {
-      const response = await fetch('/mock_data.csv')
-      const csvData = await response.text()
-      const parsedData = Papa.parse<QuestionData>(csvData, { header: true })
-      setQuestions(parsedData.data)
-    }
-    loadQuestions()
-  }, [])
+  
+  // Precalculus question in LaTeX format
+  const question = "Find the domain of $f(x) = \\frac{x+2}{x^2-4}$"
 
   const handleSubmit = () => {
-    router.push(`/feedback?questionIndex=${currentQuestionIndex}`)
+    router.push('/feedback')
   }
 
   const handleNextQuestion = () => {
-    setCurrentQuestionIndex((prevIndex) => 
-      prevIndex + 1 < questions.length ? prevIndex + 1 : 0
-    )
+    console.log("Next question")
+    // This will be implemented later with database integration
   }
 
   const handlePreviousQuestion = () => {
-    setCurrentQuestionIndex((prevIndex) => 
-      prevIndex - 1 >= 0 ? prevIndex - 1 : questions.length - 1
-    )
+    console.log("Previous question")
+    // This will be implemented later with database integration
   }
 
   return (
@@ -62,9 +40,7 @@ export default function PracticePage() {
           <div className="p-6">
             <ModeToggle mode={mode} setMode={setMode} />
             
-            {questions.length > 0 && (
-              <Question question={questions[currentQuestionIndex].question} />
-            )}
+            <Question question={question} />
             
             <QuestionNavigation
               onPreviousQuestion={handlePreviousQuestion}
