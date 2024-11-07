@@ -142,10 +142,6 @@ It's important to note that while AI was a valuable tool in our development proc
 4. **Collaborative Features**: Add functionality for students to share and discuss problems.
 5. **Adaptive Learning**: Implement an algorithm to adjust question difficulty based on student performance.
 
-## 📜 License
-
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
-
 ## 🙏 Acknowledgments
 
 - Our college precalculus department for providing sample exam questions.
