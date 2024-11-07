@@ -3,18 +3,20 @@ import Latex from 'react-latex-next'
 import 'katex/dist/katex.min.css'
 
 interface QuestionProps {
-  question: string
+  question: string | undefined
 }
 
-const Question: React.FC<QuestionProps> = ({ question }) => {
+export default function Question({ question }: QuestionProps = { question: undefined }) {
+  if (!question) {
+    return <div className="text-lg font-semibold text-gray-700">Loading question...</div>
+  }
+
   return (
     <div className="mb-6">
-      <h2 className="text-2xl font-bold mb-4 text-left">Question:</h2>
-      <div className="text-center text-xl">
+      <h2 className="text-xl font-bold mb-2">Question:</h2>
+      <div className="text-lg font-semibold text-gray-700">
         <Latex>{question}</Latex>
       </div>
     </div>
   )
 }
-
-export default Question
