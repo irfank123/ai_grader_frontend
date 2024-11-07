@@ -56,7 +56,7 @@ In the full implementation, the feedback and grade columns would be dynamically 
 
 Here's a sample of our mock data structure:
 
-```csv
+
 index,question,answer,solution,written_feedback,spoken_feedback,grade
 1,"Simplify the expression: $$\frac{x^2-9}{x-3}$$","$$x+3$$","Step 1: Factor the numerator
 $$\frac{(x+3)(x-3)}{x-3}$$
