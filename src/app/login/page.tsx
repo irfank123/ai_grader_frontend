@@ -10,32 +10,9 @@ export default function Login() {
   const [password, setPassword] = useState('')
   const router = useRouter()
 
-
-  const saveEmail = async () => {
-    try {
-      const response = await fetch('http://localhost:3000/api/v1/users', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({name: password, email: email }),
-      })
-      if (response.ok) {
-        console.log('Email saved to MongoDB')
-      } else {
-        console.error('Failed to save email')
-      }
-    } catch (error) {
-      console.error('Error saving email:', error)
-    }
-  }
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     console.log('Login attempt with:', email, password)
-
-    await saveEmail()
 
     router.push('/practice')
   }
