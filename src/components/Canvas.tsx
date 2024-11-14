@@ -1,154 +1,255 @@
-'use client'
-import React, { useRef, useState, useEffect } from 'react'
-import { Button } from "@/components/ui/button"
-import { Mic, MicOff } from 'lucide-react'
-import jsPDF from 'jspdf'
+'use client';
 
-const Canvas: React.FC = () => {
-  // state for controlling microphone status
-  const [isMicOn, setIsMicOn] = useState(false)
-  // reference to the canvas element
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  // state to track if user is currently drawing
-  const [isDrawing, setIsDrawing] = useState(false)
-  // state for offset value for scrolling the canvas
-  const [canvasOffset, setCanvasOffset] = useState(0)
+import React, { useEffect, useRef, useState, useCallback } from 'react';
+import dynamic from 'next/dynamic';
+import { Button } from "@/components/ui/button";
+import p5Types from 'p5';
 
-  // set up canvas properties on component mount
-  useEffect(() => {
-    const canvas = canvasRef.current
-    if (canvas) {
-      const ctx = canvas.getContext('2d')
-      if (ctx) {
-        ctx.strokeStyle = 'black' // set default stroke color
-        ctx.lineWidth = 2 // set default line width
-      }
-    }
-  }, [])
+const Sketch = dynamic(() => import('react-p5').then((mod) => mod.default), {
+  ssr: false,
+});
 
-  // begin drawing when user presses down
-  const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    setIsDrawing(true)
-    draw(e) // start drawing immediately
+declare global {
+  interface Window {
+    SpeechRecognition: any;
+    webkitSpeechRecognition: any;
   }
-
-  // stop drawing when user releases or exits the canvas
-  const stopDrawing = () => {
-    setIsDrawing(false)
-    const canvas = canvasRef.current
-    if (canvas) {
-      const ctx = canvas.getContext('2d')
-      if (ctx) {
-        ctx.beginPath() // reset path to prevent line continuation
-      }
-    }
-  }
-
-  // handle drawing on the canvas
-  const draw = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!isDrawing) return // only draw if user is pressing down
-    const canvas = canvasRef.current
-    if (canvas) {
-      const ctx = canvas.getContext('2d')
-      if (ctx) {
-        const rect = canvas.getBoundingClientRect() // get canvas bounds
-        const x = e.clientX - rect.left // calculate x within canvas
-        const y = e.clientY - rect.top + canvasOffset // calculate y with scroll offset
-        ctx.lineTo(x, y) // draw line to this position
-        ctx.stroke() // apply the stroke
-        ctx.beginPath() // reset path
-        ctx.moveTo(x, y) // move path to the current position
-      }
-    }
-  }
-
-  // clear the canvas content
-  const clearCanvas = () => {
-    const canvas = canvasRef.current
-    if (canvas) {
-      const ctx = canvas.getContext('2d')
-      if (ctx) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height) // clear entire canvas
-      }
-    }
-    setCanvasOffset(0) // reset scroll offset after clearing
-  }
-
-  // handle vertical scrolling of the canvas
-  const handleScroll = (e: React.WheelEvent<HTMLDivElement>) => {
-    // scroll down if not at max offset
-    if (e.deltaY > 0 && canvasOffset < 1000) {
-      setCanvasOffset(prev => prev + 20)
-    // scroll up if not at min offset
-    } else if (e.deltaY < 0 && canvasOffset > 0) {
-      setCanvasOffset(prev => prev - 20)
-    }
-  }
-
-  // generate a PDF from the canvas content
-  const generatePDF = () => {
-    const canvas = canvasRef.current
-    if (canvas) {
-      const imgData = canvas.toDataURL('image/png') // get canvas as image
-      const pdf = new jsPDF() // create new PDF
-      pdf.addImage(imgData, 'PNG', 10, 10, canvas.width / 10, canvas.height / 10) // add image to PDF
-      pdf.save('solution.pdf') // download PDF file
-    }
-  }
-
-  // toggle microphone status
-  const toggleMicrophone = () => {
-    setIsMicOn(!isMicOn)
-    // log microphone status change for now
-    console.log(isMicOn ? 'Microphone turned off' : 'Microphone turned on')
-  }
-
-  return (
-    <div className="mb-6">
-      <h2 className="text-xl font-semibold mb-2">Your Solution:</h2>
-      <div 
-        className="border border-gray-300 rounded-lg overflow-hidden" 
-        style={{height: '400px', overflowY: 'auto'}}
-        onWheel={handleScroll}
-      >
-        <canvas
-          ref={canvasRef}
-          width={800}
-          height={1400}
-          onMouseDown={startDrawing}
-          onMouseUp={stopDrawing}
-          onMouseOut={stopDrawing}
-          onMouseMove={draw}
-          className="w-full"
-          style={{marginTop: `-${canvasOffset}px`}} // apply vertical offset for scrolling
-        />
-      </div>
-      <div className="mt-2 flex gap-2">
-        <Button 
-          onClick={clearCanvas} 
-          variant="outline"
-          className="flex-1"
-        >
-          Clear Canvas
-        </Button>
-        <Button 
-          onClick={generatePDF} 
-          variant="outline"
-          className="flex-1"
-        >
-          Generate PDF
-        </Button>
-        <Button 
-          onClick={toggleMicrophone} 
-          variant="outline"
-          className="flex-1"
-        >
-          {isMicOn ? <MicOff className="mr-2 h-4 w-4" /> : <Mic className="mr-2 h-4 w-4" />}
-          {isMicOn ? 'Turn Off Mic' : 'Turn On Mic'}
-        </Button>
-      </div>
-    </div>
-  )
 }
 
-export default Canvas
+export default function Canvas() {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [currentSection, setCurrentSection] = useState(0);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [transcript, setTranscript] = useState('');
+  const [buttonText, setButtonText] = useState("Next Section");
+  const p5InstanceRef = useRef<p5Types | null>(null);
+  const recognitionRef = useRef<any>(null);
+
+  const preventScroll = useCallback((e: TouchEvent) => {
+    if (isDrawing) {
+      e.preventDefault();
+    }
+  }, [isDrawing]);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (container) {
+      container.style.touchAction = 'none';
+    }
+
+    document.body.addEventListener('touchmove', preventScroll, { passive: false });
+
+    // Initialize Web Speech API
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.continuous = false;
+      recognitionRef.current.interimResults = true;
+
+      recognitionRef.current.onresult = (event: any) => {
+        let interimTranscript = '';
+        let finalTranscript = '';
+
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            finalTranscript += event.results[i][0].transcript;
+          } else {
+            interimTranscript += event.results[i][0].transcript;
+          }
+        }
+
+        setTranscript(prevTranscript => prevTranscript + ' ' + (finalTranscript || interimTranscript));
+      };
+
+      recognitionRef.current.onend = () => {
+        if (isRecording) {
+          recognitionRef.current.start();
+        }
+      };
+
+      recognitionRef.current.onerror = (event: any) => {
+        console.error('Speech recognition error', event.error);
+        if (event.error === 'no-speech') {
+          // Restart recognition if no speech is detected
+          recognitionRef.current.stop();
+        }
+      };
+    }
+
+    return () => {
+      document.body.removeEventListener('touchmove', preventScroll);
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    };
+  }, [isDrawing, preventScroll, isRecording]);
+
+  const setup = (p5: p5Types, canvasParentRef: Element) => {
+    p5InstanceRef.current = p5;
+    const canvasWidth = canvasParentRef.clientWidth * 2;
+    const canvasHeight = 500;
+
+    const canvas = p5.createCanvas(canvasWidth, canvasHeight);
+    canvas.parent(canvasParentRef);
+    canvasRef.current = canvas.elt;
+    p5.background(255);
+
+    p5.noFill();
+    p5.strokeWeight(4);
+    p5.stroke(0);
+  };
+
+  const draw = (p5: p5Types) => {
+    if (isDrawing) {
+      const halfWidth = p5.width / 2;
+      const adjustedMouseX = p5.mouseX - (currentSection * halfWidth);
+      const adjustedPMouseX = p5.pmouseX - (currentSection * halfWidth);
+      
+      if (adjustedMouseX >= 0 && adjustedMouseX < halfWidth) {
+        p5.line(
+          adjustedPMouseX + (currentSection * halfWidth), 
+          p5.pmouseY, 
+          adjustedMouseX + (currentSection * halfWidth), 
+          p5.mouseY
+        );
+      }
+    }
+  };
+
+  const mousePressed = (p5: p5Types) => {
+    const halfWidth = p5.width / 2;
+    const adjustedMouseX = p5.mouseX - (currentSection * halfWidth);
+    
+    if (adjustedMouseX >= 0 && adjustedMouseX < halfWidth) {
+      setIsDrawing(true);
+    }
+  };
+
+  const mouseReleased = () => {
+    setIsDrawing(false);
+  };
+
+  const touchStarted = (p5: p5Types) => {
+    const halfWidth = p5.width / 2;
+    if (p5.touches && p5.touches.length > 0) {
+      const touch = p5.touches[0] as p5Types.Vector;
+      const adjustedTouchX = touch.x - (currentSection * halfWidth);
+      
+      if (adjustedTouchX >= 0 && adjustedTouchX < halfWidth) {
+        setIsDrawing(true);
+      }
+    }
+    return false;
+  };
+
+  const touchEnded = () => {
+    setIsDrawing(false);
+    return false;
+  };
+
+  const switchSection = () => {
+    const newSection = (currentSection + 1) % 2;
+    setCurrentSection(newSection);
+    setButtonText((prev) => prev === "Next Section" ? "Prev Section" : "Next Section");
+
+    if (containerRef.current) {
+      containerRef.current.scrollLeft = newSection * (containerRef.current.clientWidth);
+    }
+  };
+
+  const clearCanvas = () => {
+    if (p5InstanceRef.current) {
+      const p5 = p5InstanceRef.current;
+      const halfWidth = p5.width / 2;
+      p5.fill(255);
+      p5.noStroke();
+      p5.rect(currentSection * halfWidth, 0, halfWidth, p5.height);
+      p5.noFill();
+      p5.stroke(0);
+    }
+  };
+
+  const startRecording = () => {
+    if (recognitionRef.current) {
+      recognitionRef.current.start();
+      setIsRecording(true);
+    }
+  };
+
+  const stopRecording = () => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      setIsRecording(false);
+    }
+  };
+
+  const saveTranscript = () => {
+    if (transcript) {
+      const blob = new Blob([transcript], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'transcript.txt';
+      link.click();
+    }
+  };
+
+  const downloadImage = () => {
+    if (!canvasRef.current) return;
+
+    const canvas = canvasRef.current;
+    const link = document.createElement('a');
+    link.download = 'canvas_sections.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  };
+
+  const saveAll = () => {
+    downloadImage();
+    saveTranscript();
+  };
+
+  return (
+    <div className="flex flex-col items-center w-full max-w-4xl mx-auto p-4">
+      <div
+        ref={containerRef}
+        className="w-full border border-gray-300 rounded-lg overflow-hidden"
+        style={{ height: '500px' }}
+      >
+        <Sketch 
+          setup={setup} 
+          draw={draw}
+          mousePressed={mousePressed}
+          mouseReleased={mouseReleased}
+          touchStarted={touchStarted}
+          touchEnded={touchEnded}
+        />
+      </div>
+      <div className="flex flex-wrap justify-center gap-2 mt-4">
+        <Button onClick={switchSection} variant="secondary">
+          {buttonText}
+        </Button>
+        <Button onClick={clearCanvas} variant="destructive">
+          Clear Canvas
+        </Button>
+        <Button
+          onClick={isRecording ? stopRecording : startRecording}
+          variant={isRecording ? "outline" : "default"}
+        >
+          {isRecording ? 'Stop Recording' : 'Start Recording'}
+        </Button>
+        <Button onClick={saveAll} variant="default">
+          Save All
+        </Button>
+      </div>
+      {transcript && (
+        <div className="mt-4 p-4 bg-gray-100 rounded w-full">
+          <h3 className="font-bold mb-2">Transcript:</h3>
+          <p className="whitespace-pre-wrap">{transcript}</p>
+        </div>
+      )}
+    </div>
+  );
+}
