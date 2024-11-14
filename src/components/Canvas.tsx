@@ -22,13 +22,13 @@ export default function Canvas() {
   const [currentSection, setCurrentSection] = useState(0);
   const [isDrawing, setIsDrawing] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
-  const [transcript, setTranscript] = useState('');
   const [buttonText, setButtonText] = useState("Next Section");
   const p5InstanceRef = useRef<p5Types | null>(null);
   const recognitionRef = useRef<any>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
 
   const preventScroll = useCallback((e: TouchEvent) => {
-    if (isDrawing) {
+    if (isDrawing && e.target instanceof HTMLCanvasElement) {
       e.preventDefault();
     }
   }, [isDrawing]);
@@ -45,36 +45,19 @@ export default function Canvas() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SpeechRecognition) {
       recognitionRef.current = new SpeechRecognition();
-      recognitionRef.current.continuous = false;
-      recognitionRef.current.interimResults = true;
+      recognitionRef.current.continuous = true;
+      recognitionRef.current.interimResults = false;
 
       recognitionRef.current.onresult = (event: any) => {
-        let interimTranscript = '';
-        let finalTranscript = '';
-
-        for (let i = event.resultIndex; i < event.results.length; ++i) {
-          if (event.results[i].isFinal) {
-            finalTranscript += event.results[i][0].transcript;
-          } else {
-            interimTranscript += event.results[i][0].transcript;
-          }
-        }
-
-        setTranscript(prevTranscript => prevTranscript + ' ' + (finalTranscript || interimTranscript));
-      };
-
-      recognitionRef.current.onend = () => {
-        if (isRecording) {
-          recognitionRef.current.start();
+        const result = event.results[event.results.length - 1];
+        if (result.isFinal) {
+          const audioBlob = new Blob([result[0].transcript], { type: 'text/plain' });
+          audioChunksRef.current.push(audioBlob);
         }
       };
 
       recognitionRef.current.onerror = (event: any) => {
         console.error('Speech recognition error', event.error);
-        if (event.error === 'no-speech') {
-          // Restart recognition if no speech is detected
-          recognitionRef.current.stop();
-        }
       };
     }
 
@@ -84,7 +67,7 @@ export default function Canvas() {
         recognitionRef.current.stop();
       }
     };
-  }, [isDrawing, preventScroll, isRecording]);
+  }, [preventScroll]);
 
   const setup = (p5: p5Types, canvasParentRef: Element) => {
     p5InstanceRef.current = p5;
@@ -173,26 +156,14 @@ export default function Canvas() {
 
   const startRecording = () => {
     if (recognitionRef.current) {
-      recognitionRef.current.start();
+      audioChunksRef.current = [];
       setIsRecording(true);
     }
   };
 
   const stopRecording = () => {
     if (recognitionRef.current) {
-      recognitionRef.current.stop();
       setIsRecording(false);
-    }
-  };
-
-  const saveTranscript = () => {
-    if (transcript) {
-      const blob = new Blob([transcript], { type: 'text/plain' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = 'transcript.txt';
-      link.click();
     }
   };
 
@@ -206,9 +177,20 @@ export default function Canvas() {
     link.click();
   };
 
+  const saveAudio = () => {
+    if (audioChunksRef.current.length === 0) return;
+
+    const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+    const audioUrl = URL.createObjectURL(audioBlob);
+    const link = document.createElement('a');
+    link.href = audioUrl;
+    link.download = 'recorded_audio.webm';
+    link.click();
+  };
+
   const saveAll = () => {
     downloadImage();
-    saveTranscript();
+    saveAudio();
   };
 
   return (
@@ -244,12 +226,6 @@ export default function Canvas() {
           Save All
         </Button>
       </div>
-      {transcript && (
-        <div className="mt-4 p-4 bg-gray-100 rounded w-full">
-          <h3 className="font-bold mb-2">Transcript:</h3>
-          <p className="whitespace-pre-wrap">{transcript}</p>
-        </div>
-      )}
     </div>
   );
 }
